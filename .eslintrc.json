@@ -1,6 +1,10 @@
 {
   "extends": "next/core-web-vitals",
   "rules": {
-    "no-unused-vars": "off" // Example: disable specific rule
+    "no-unused-vars": "warn",
+    "@typescript-eslint/no-explicit-any": "off",
+    "react-hooks/exhaustive-deps": "warn"
   }
 }
+
+

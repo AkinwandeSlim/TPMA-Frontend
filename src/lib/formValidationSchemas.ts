@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { UserSex } from "@prisma/client";
+
 
 export const adminSchema = z.object({
   id: z.string().optional(),
@@ -28,7 +28,7 @@ export const TeacherTraineeSchema = z.object({
   address: z.string().min(1, { message: "Address is required!" }),
   img: z.string().optional(),
   bloodType: z.string().optional(),
-  sex: z.nativeEnum(UserSex).optional(),
+  sex: z.enum(["MALE", "FEMALE"]).optional(),
   birthday: z.coerce.date().optional(),
   weeksRequired: z.coerce.number().optional(),
   levelId: z.coerce.number().min(1, { message: "Level is required!" }),
