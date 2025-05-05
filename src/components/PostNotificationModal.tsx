@@ -2,6 +2,9 @@
 import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { API_BASE_URL } from "@/lib/api";
+
+
 
 type PostNotificationModalProps = {
   isOpen: boolean;
@@ -34,7 +37,7 @@ const PostNotificationModal = ({
       if (!token) throw new Error("Authentication token not found.");
 
       await axios.post(
-        `http://localhost:5000/api/supervisors/${supervisorId}/notifications`,
+        `${API_BASE_URL}/api/supervisors/${supervisorId}/notifications`,
         { title, message },
         { headers: { Authorization: `Bearer ${token}` } }
       );

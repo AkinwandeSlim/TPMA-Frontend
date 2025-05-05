@@ -11,6 +11,10 @@ import { CldUploadWidget } from "next-cloudinary";
 import Image from "next/image";
 import axios from "axios";
 
+import { API_BASE_URL } from "@/lib/api";
+
+
+
 type Props = {
   type: "create" | "update";
   data?: SchoolSchemaType & { id?: string };
@@ -55,7 +59,7 @@ const SchoolForm = ({ type, data, onClose, refetch }: Props) => {
       let response;
       if (type === "create") {
         response = await axios.post(
-          "http://localhost:5000/api/admin/schools",
+          `${API_BASE_URL}/api/admin/schools`,
           formWithLogo,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -66,7 +70,7 @@ const SchoolForm = ({ type, data, onClose, refetch }: Props) => {
           return;
         }
         response = await axios.put(
-          `http://localhost:5000/api/admin/schools/${data.id}`,
+          `${API_BASE_URL}/api/admin/schools/${data.id}`,
           formWithLogo,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -93,7 +97,7 @@ const SchoolForm = ({ type, data, onClose, refetch }: Props) => {
         .find((row) => row.startsWith("token="))
         ?.split("=")[1];
 
-      await axios.delete(`http://localhost:5000/api/admin/schools/${data.id}`, {
+      await axios.delete(`${API_BASE_URL}/api/admin/schools/${data.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

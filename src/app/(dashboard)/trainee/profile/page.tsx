@@ -14,7 +14,7 @@ import Performance from "@/components/Performance";
 import Announcements from "@/components/Announcements";
 import { toast } from "react-toastify";
 import { ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
-import { getTraineeProfile, getTraineeLessons, getNotifications, verifyToken } from "@/lib/api";
+import { getTraineeProfile, getTraineeLessons, getNotifications, verifyToken, API_BASE_URL } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
 type Trainee = {
@@ -427,7 +427,7 @@ const TraineeProfilePage = () => {
         throw new Error("Authentication token or user identifier missing");
       }
 
-      const response = await fetch(`http://localhost:5000/api/trainees/${encodeURIComponent(userIdentifier)}/report`, {
+      const response = await fetch(`${API_BASE_URL}/api/trainees/${encodeURIComponent(userIdentifier)}/report`, {
         headers: { Authorization: `Bearer ${token}` },
         credentials: "include",
       });
@@ -458,7 +458,7 @@ const TraineeProfilePage = () => {
         throw new Error("Authentication token, trainee, or user identifier missing");
       }
 
-      await fetch("http://localhost:5000/api/trainees/feedback", {
+      await fetch(`${API_BASE_URL}/api/trainees/feedback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -941,23 +941,6 @@ const TraineeProfilePage = () => {
         </div>
 
         <Performance />
-        {/*<Announcements traineeId={trainee.id} />*/}
-{/*        <Notifications
-          notifications={notifications}
-          userIdentifier={userIdentifier!}
-          loading={loading}
-          setLoading={setLoading}
-          setNotifications={setNotifications}
-        />
-
-
-
-*/}
-
-
-
-
-
 
         <div className="bg-white p-4 rounded-md shadow-md">
           <h2 className="text-xl font-semibold mb-4">Notifications</h2>

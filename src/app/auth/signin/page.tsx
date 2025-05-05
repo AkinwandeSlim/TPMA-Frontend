@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Logo } from "@/templates/Logo";
 import Image from "next/image";
-
+import {API_BASE_URL} from "@/lib/api";
 type FormData = {
   userType: "admin" | "supervisor" | "teacherTrainee";
   identifier: string;
@@ -56,7 +56,7 @@ export default function SignIn() {
     setError("");
 
     try {
-      const response = await axios.post("http://localhost:5000/api/login", formData);
+      const response = await axios.post(`${API_BASE_URL}/api/login`, formData);
       console.log("Login response:", response.data);
       const { token, role } = response.data;
 

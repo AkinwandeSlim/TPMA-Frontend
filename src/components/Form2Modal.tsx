@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { API_BASE_URL } from "@/lib/api";
 
 type Form2ModalProps = {
   table: "trainee" | "supervisor" | "lesson_plan";
@@ -55,7 +56,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
             : `/api/lesson-plans`;
         const method = type === "create" ? "POST" : type === "update" ? "PUT" : "DELETE";
 
-        const response = await fetch(`http://localhost:5000${endpoint}`, {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
           method,
           headers: {
             Authorization: `Bearer ${token}`,

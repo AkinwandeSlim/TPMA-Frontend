@@ -15,44 +15,6 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import sanitizeHtml from "sanitize-html";
 import { format } from "date-fns";
 
-// const InputField = ({
-//   label,
-//   name,
-//   type = "text",
-//   register,
-//   error,
-//   ariaDescribedby,
-//   disabled = false,
-// }: {
-//   label: string;
-//   name: string;
-//   type?: string;
-//   register: any;
-//   error?: any;
-//   ariaDescribedby?: string;
-//   disabled?: boolean;
-// }) => (
-//   <div className="flex flex-col gap-2 w-full md:w-3/4">
-//     <label htmlFor={name} className="text-sm font-medium text-gray-700">
-//       {label}
-//     </label>
-//     <input
-//       id={name}
-//       type={type}
-//       {...register(name)}
-//       disabled={disabled}
-//       className={`border border-gray-300 p-4 rounded-lg text-base w-full max-w-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-//         disabled ? "bg-gray-100 cursor-not-allowed" : ""
-//       }`}
-//       aria-describedby={ariaDescribedby}
-//     />
-//     {error?.message && (
-//       <p id={`${name}-error`} className="text-xs text-red-500 font-medium" role="alert">
-//         {error.message}
-//       </p>
-//     )}
-//   </div>
-// );
 
 
 

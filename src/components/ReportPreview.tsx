@@ -6,6 +6,9 @@ import axios from "axios";
 import Image from "next/image";
 import Table from "@/components/Table";
 
+import { API_BASE_URL } from "@/lib/api";
+
+
 export default function ReportPreview() {
   const [reports, setReports] = useState([]);
 
@@ -33,7 +36,7 @@ export default function ReportPreview() {
     }
 
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/reports/preview", {
+      const response = await axios.get(`${API_BASE_URL}/api/admin/reports/preview`, {
         headers: { Authorization: `Bearer ${token}` },
         params: query,
       });

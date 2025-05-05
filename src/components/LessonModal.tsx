@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Image from "next/image";
+import { API_BASE_URL } from "@/lib/api";
 
 type Lesson = {
   id: number;
@@ -38,7 +39,7 @@ const LessonsModal = ({ isOpen, onClose, supervisorId, pendingLessonPlansCount }
         if (!token) throw new Error("Authentication token not found.");
 
         const response = await axios.get(
-          `http://localhost:5000/api/lessons/supervisor/${supervisorId}`,
+          `${API_BASE_URL}/api/lessons/supervisor/${supervisorId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setLessons(response.data.lessons || []);

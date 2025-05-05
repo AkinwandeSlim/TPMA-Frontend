@@ -196,7 +196,7 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
     };
 
     const token = getToken();
-    const baseUrl = API_BASE_URL || "http://localhost:5000";
+    const baseUrl = API_BASE_URL || "https://tpma-backend.onrender.com";
     console.log("TraineeListPage - API_BASE_URL:", baseUrl, "Token:", token);
 
     if (!token) {
@@ -302,7 +302,7 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
         }
 
         console.log("TraineeListPage - Uploading CSV file:", file.name);
-        const baseUrl = API_BASE_URL || "http://localhost:5000";
+        const baseUrl = API_BASE_URL || "https://tpma-backend.onrender.com";
         const response = await axios.post(
           `${baseUrl}/api/trainees/bulk`,
           formData,
