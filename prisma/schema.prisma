@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String @id
+  username     String @unique
+  email        String @unique
+  passwordHash String
+  role         String @default("admin")
+}
+
+model TeacherTrainee {
+  id            String         @id
+  regNo         String         @unique
+  email         String         @unique
+  passwordHash  String
+  role          String         @default("teacherTrainee")
+  name          String
+  surname       String
+  phone         String?        @unique
+  address       String
+  img           String?
+  bloodType     String
+  sex           UserSex
+  createdAt     DateTime       @default(now())
+  birthday      DateTime
+  placeOfTP     String?
+  weeksRequired Int?
+  levelId       Int
+  courseId      Int
+  evaluations   Evaluation[]
+  lessonPlans   LessonPlan[]
+  notifications Notification[] @relation("TeacherTraineeNotifications")
+  reports       Report[]
+  course        Course         @relation(fields: [courseId], references: [id])
+  level         Level          @relation(fields: [levelId], references: [id])
+  supervisors   Supervisor[]   @relation("SupervisorTeacherTrainee")
+}
+
+model Supervisor {
+  id                 String           @id
+  staffId            String           @unique
+  email              String           @unique
+  passwordHash       String
+  role               String           @default("supervisor")
+  name               String
+  surname            String
+  phone              String?          @unique
+  address            String
+  img                String?
+  bloodType          String
+  sex                UserSex
+  createdAt          DateTime         @default(now())
+  birthday           DateTime
+  placeOfSupervision String?
+  evaluations        Evaluation[]
+  lessonPlans        LessonPlan[]
+  notifications      Notification[]
+  teacherTrainees    TeacherTrainee[] @relation("SupervisorTeacherTrainee")
+}
+
+model Level {
+  id              Int              @id @default(autoincrement())
+  level           Int              @unique
+  teacherTrainees TeacherTrainee[]
+}
+
+model Course {
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  lessonPlans     LessonPlan[]
+  teacherTrainees TeacherTrainee[]
+}
+
+model LessonPlan {
+  id               Int            @id @default(autoincrement())
+  title            String
+  content          String
+  duration         Int?
+  createdAt        DateTime       @default(now())
+  teacherTraineeId String
+  courseId         Int
+  supervisorId     String?
+  feedback         String?
+  course           Course         @relation(fields: [courseId], references: [id])
+  supervisor       Supervisor?    @relation(fields: [supervisorId], references: [id])
+  teacherTrainee   TeacherTrainee @relation(fields: [teacherTraineeId], references: [id])
+}
+
+model EvaluationForm {
+  id          Int          @id @default(autoincrement())
+  title       String
+  fileUrl     String
+  uploadedBy  String
+  uploadedAt  DateTime     @default(now())
+  evaluations Evaluation[]
+}
+
+model Evaluation {
+  id               Int            @id @default(autoincrement())
+  teacherTraineeId String
+  supervisorId     String
+  formId           Int
+  score            Int?
+  feedback         String?
+  submittedAt      DateTime       @default(now())
+  form             EvaluationForm @relation(fields: [formId], references: [id])
+  supervisor       Supervisor     @relation(fields: [supervisorId], references: [id])
+  teacherTrainee   TeacherTrainee @relation(fields: [teacherTraineeId], references: [id])
+}
+
+model Report {
+  id               Int            @id @default(autoincrement())
+  title            String
+  fileUrl          String
+  teacherTraineeId String
+  submittedAt      DateTime       @default(now())
+  teacherTrainee   TeacherTrainee @relation(fields: [teacherTraineeId], references: [id])
+}
+
+model Notification {
+  id               Int             @id @default(autoincrement())
+  title            String
+  message          String
+  supervisorId     String
+  teacherTraineeId String?
+  createdAt        DateTime        @default(now())
+  supervisor       Supervisor      @relation(fields: [supervisorId], references: [id])
+  teacherTrainee   TeacherTrainee? @relation("TeacherTraineeNotifications", fields: [teacherTraineeId], references: [id])
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  startTime   DateTime
+  endTime     DateTime
+}
+
+model Announcement {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  date        DateTime
+}
+
+enum UserSex {
+  MALE
+  FEMALE
+}
