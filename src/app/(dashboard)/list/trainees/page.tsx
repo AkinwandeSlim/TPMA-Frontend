@@ -36,86 +36,63 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
   const router = useRouter();
   const [trainees, setTrainees] = useState<Trainee[]>([]);
   const [role, setRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
   const [error, setError] = useState<string | null>(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(""); // Raw search input
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(""); // Debounced for API
+  const [sexFilter, setSexFilter] = useState(""); // Sex filter
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterConfig, setFilterConfig] = useState<{ sex: string }>({ sex: "" });
-  const [tempFilterConfig, setTempFilterConfig] = useState<{ sex: string }>({ sex: "" });
-  const [triggerFetch, setTriggerFetch] = useState<{
-    page: number;
-    resetPage: boolean;
-    search: string;
-    sex: string;
-  }>({
-    page: 1,
-    resetPage: true,
-    search: "",
-    sex: "",
-  });
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const lastFetchTime = useRef<number>(0);
-  const abortController = useRef<AbortController | null>(null);
+  const isFetching = useRef(false); // Track fetch state
+  const isMounted = useRef(false); // Track mount state for auth
+  const pageRef = useRef(currentPage); // Track currentPage
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null); // For debouncing
 
-  // Debounce search query
+  // Debounce search query to limit API calls (750ms delay)
   useEffect(() => {
-    const handler = setTimeout(() => {
-      console.log("TraineeListPage - Triggering fetch for searchQuery:", searchQuery);
-      setTriggerFetch((prev) => ({
-        ...prev,
-        search: searchQuery,
-        page: 1,
-        resetPage: true,
-      }));
-    }, 500);
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 750);
 
-    return () => clearTimeout(handler);
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
   }, [searchQuery]);
 
-  // Fetch trainees
+  // Fetch trainees from API
   const fetchTrainees = useCallback(
-    async (params: {
-      page: number;
-      resetPage: boolean;
-      search: string;
-      sex: string;
-    }) => {
-      if (role !== "admin") {
-        console.log("TraineeListPage - Skipping fetch: role not admin");
+    async (page: number, resetPage = false) => {
+      if (role !== "admin" || isFetching.current) {
+        console.log("TraineeListPage - Skipping fetch: not admin or already fetching");
         return;
       }
 
-      const now = Date.now();
-      if (loading || now - lastFetchTime.current < 1500) {
-        console.log("TraineeListPage - Skipping fetch: loading or too soon");
-        return;
-      }
-
-      // Cancel previous request
-      if (abortController.current) {
-        abortController.current.abort();
-      }
-      abortController.current = new AbortController();
-
+      isFetching.current = true;
       setLoading(true);
       setError(null);
-      lastFetchTime.current = now;
 
       try {
-        const pageToFetch = params.resetPage ? 1 : params.page;
+        const pageToFetch = resetPage ? 1 : page;
         console.log("TraineeListPage - Fetching with params:", {
           page: pageToFetch,
           limit: 10,
-          search: params.search,
-          sex: params.sex,
+          search: debouncedSearchQuery,
+          sex: sexFilter || undefined,
         });
 
+        // Use original getTrainees signature without signal
         const response = await getTrainees(
           pageToFetch,
-          params.search,
-          params.sex || undefined
+          debouncedSearchQuery,
+          sexFilter || undefined
         );
 
         console.log("TraineeListPage - API Response:", response);
@@ -142,23 +119,21 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
           setTrainees(mappedTrainees);
           setTotalCount(response.totalCount ?? response.total ?? 0);
           setTotalPages(response.totalPages ?? Math.ceil((response.totalCount ?? 0) / 10) ?? 1);
-          setTriggerFetch((prev) => ({
-            ...prev,
-            page: response.currentPage ?? pageToFetch,
-            resetPage: false,
-          }));
+          if (resetPage && pageToFetch !== 1) {
+            setCurrentPage(1);
+            pageRef.current = 1;
+          } else if (pageToFetch !== pageRef.current) {
+            setCurrentPage(pageToFetch);
+            pageRef.current = pageToFetch;
+          }
         } else {
           setTrainees([]);
           setTotalCount(0);
           setTotalPages(1);
-          setError("Invalid data received from server");
-          toast.error("Invalid data received from server");
+          setError("No trainees found for the given criteria.");
+          toast.info("No trainees found for the given criteria.");
         }
       } catch (err: any) {
-        if (err.name === "AbortError") {
-          console.log("TraineeListPage - Fetch aborted");
-          return;
-        }
         console.error("TraineeListPage - Error fetching trainees:", {
           message: err.message,
           response: err.response?.data,
@@ -178,13 +153,17 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
         toast.error(message);
       } finally {
         setLoading(false);
+        isFetching.current = false;
       }
     },
-    [role, loading, router]
+    [role, debouncedSearchQuery, sexFilter, router]
   );
 
-  // Auth verification
+  // Auth verification (runs once)
   useEffect(() => {
+    if (isMounted.current) return;
+    isMounted.current = true;
+
     const getToken = (): string | null => {
       const cookieToken = document.cookie
         .split("; ")
@@ -219,7 +198,9 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
           throw new Error("Role not found in response");
         }
         setRole(userRole);
-        if (userRole !== "admin") {
+        if (userRole === "admin") {
+          fetchTrainees(1); // Initial fetch
+        } else {
           console.log("TraineeListPage - Unauthorized role, redirecting");
           setError("Unauthorized: You lack permission to view this page.");
           router.push("/unauthorized");
@@ -243,34 +224,25 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
         toast.error(message);
         router.push("/auth/signin");
       });
-  }, [router]);
-
-  // Consolidated fetch trigger
-  useEffect(() => {
-    if (!role || role !== "admin") {
-      console.log("TraineeListPage - Skipping fetch trigger: invalid role");
-      return;
-    }
-
-    fetchTrainees(triggerFetch);
 
     return () => {
-      if (abortController.current) {
-        abortController.current.abort();
-      }
+      isMounted.current = false;
     };
-  }, [role, triggerFetch, fetchTrainees]);
+  }, [router, fetchTrainees]);
+
+  // Fetch when debounced search or filter changes
+  useEffect(() => {
+    if (role === "admin") {
+      fetchTrainees(1, true);
+    }
+  }, [debouncedSearchQuery, sexFilter, role, fetchTrainees]);
 
   // Handle refetch after CRUD operations
   const handleRefetch = useCallback(
     async (operation: "create" | "update" | "delete") => {
-      await setTriggerFetch((prev) => ({
-        ...prev,
-        page: operation === "create" ? 1 : prev.page,
-        resetPage: operation === "create",
-      }));
+      await fetchTrainees(operation === "create" ? 1 : pageRef.current, operation === "create");
     },
-    []
+    [fetchTrainees]
   );
 
   // Handle bulk upload
@@ -329,45 +301,13 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
     [handleRefetch]
   );
 
-  // Apply filters
-  const applyFilters = useCallback(() => {
-    console.log("TraineeListPage - Applying filters:", tempFilterConfig);
-    setFilterConfig(tempFilterConfig);
-    setShowFilterModal(false);
-    setTriggerFetch((prev) => ({
-      ...prev,
-      sex: tempFilterConfig.sex,
-      page: 1,
-      resetPage: true,
-    }));
-  }, [tempFilterConfig]);
-
-  // Clear filters
-  const clearFilters = useCallback(() => {
-    console.log("TraineeListPage - Clearing filters");
-    setFilterConfig({ sex: "" });
-    setTempFilterConfig({ sex: "" });
-    setShowFilterModal(false);
-    setTriggerFetch((prev) => ({
-      ...prev,
-      sex: "",
-      page: 1,
-      resetPage: true,
-    }));
-  }, []);
-
   // Clear search and filters
   const clearSearchAndFilters = useCallback(() => {
     console.log("TraineeListPage - Clearing search and filters");
     setSearchQuery("");
-    setFilterConfig({ sex: "" });
-    setTempFilterConfig({ sex: "" });
-    setTriggerFetch({
-      page: 1,
-      resetPage: true,
-      search: "",
-      sex: "",
-    });
+    setSexFilter("");
+    setCurrentPage(1);
+    pageRef.current = 1;
   }, []);
 
   // Columns and renderRow
@@ -431,6 +371,7 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
     return RowComponent;
   }, [role, handleRefetch]);
 
+  // Render error state
   if (error) {
     return (
       <div className="p-4 text-red-500 bg-red-50 rounded-lg">
@@ -443,7 +384,7 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
             Sign In
           </button>
           <button
-            onClick={() => setTriggerFetch((prev) => ({ ...prev, page: 1, resetPage: true }))}
+            onClick={() => fetchTrainees(1, true)}
             className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
           >
             Retry
@@ -453,7 +394,8 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
     );
   }
 
-  if (loading && trainees.length === 0) {
+  // Render loading state
+  if (loading) {
     return (
       <div className="p-4 flex items-center justify-center h-full">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#5244F3]"></div>
@@ -469,14 +411,11 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
           <div className="flex items-center gap-2 w-full md:w-auto">
             <TableSearch
               placeholder="Search by Name, RegNo, Email..."
-              onSearch={(query) => {
-                console.log("TraineeListPage - TableSearch onSearch called with query:", query);
-                setSearchQuery(query);
-              }}
+              onSearch={setSearchQuery}
               value={searchQuery}
               ariaLabel="Search trainees"
             />
-            {(searchQuery || filterConfig.sex) && (
+            {(searchQuery || sexFilter) && (
               <button
                 onClick={clearSearchAndFilters}
                 className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
@@ -487,11 +426,7 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
           </div>
           <div className="flex items-center gap-4 self-end">
             <button
-              onClick={() => {
-                console.log("TraineeListPage - Opening filter modal");
-                setTempFilterConfig({ sex: filterConfig.sex });
-                setShowFilterModal(true);
-              }}
+              onClick={() => setShowFilterModal(true)}
               className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow hover:bg-yellow-500 transition-colors"
               aria-label="Filter trainees"
             >
@@ -514,19 +449,17 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
           </div>
         </div>
       </div>
-      {trainees.length === 0 && !error ? (
+      {trainees.length === 0 ? (
         <div className="bg-gray-50 p-6 text-center text-gray-500 rounded-md">
-          <p className="mb-4">No trainees found.</p>
+          <p className="mb-4">No trainees found for the current search or filter.</p>
         </div>
       ) : (
         <>
           <Table columns={columns} renderRow={renderRow} data={trainees} />
           <Pagination
-            page={triggerFetch.page}
+            page={currentPage}
             count={totalCount}
-            onPageChange={(page) =>
-              setTriggerFetch((prev) => ({ ...prev, page, resetPage: false }))
-            }
+            onPageChange={(page) => fetchTrainees(page)}
           />
         </>
       )}
@@ -538,8 +471,8 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
               <div>
                 <label className="block text-sm font-medium">Sex</label>
                 <select
-                  value={tempFilterConfig.sex}
-                  onChange={(e) => setTempFilterConfig({ sex: e.target.value })}
+                  value={sexFilter}
+                  onChange={(e) => setSexFilter(e.target.value)}
                   className="w-full p-2 border rounded-md"
                   aria-label="Filter by sex"
                 >
@@ -550,24 +483,28 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={applyFilters}
+                  onClick={() => {
+                    fetchTrainees(1, true);
+                    setShowFilterModal(false);
+                  }}
                   className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
                   aria-label="Apply filters"
                 >
                   Apply
                 </button>
                 <button
-                  onClick={clearFilters}
+                  onClick={() => {
+                    setSexFilter("");
+                    fetchTrainees(1, true);
+                    setShowFilterModal(false);
+                  }}
                   className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
                   aria-label="Clear filters"
                 >
                   Clear Filters
                 </button>
                 <button
-                  onClick={() => {
-                    console.log("TraineeListPage - Closing filter modal");
-                    setShowFilterModal(false);
-                  }}
+                  onClick={() => setShowFilterModal(false)}
                   className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
                   aria-label="Close filter modal"
                 >
@@ -583,55 +520,5 @@ const TraineeListPage = ({ searchParams }: { searchParams: { [key: string]: stri
 };
 
 export default TraineeListPage;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
