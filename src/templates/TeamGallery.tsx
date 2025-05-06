@@ -26,8 +26,8 @@ const teamMembers = [
     linkedin: "https://linkedin.com/in/usmah-isah",
   },
   {
-    name: "Hon. Musa Ahmed",
-    role: "NITDA CEO",
+    name: "Kashifu Inuwa Abdullahi CCIE",
+    role: "DG  NITDA",
     image: "/assets/images/team/NITDA1.jpg",
     bio: "Championing digital transformation in education through NITDA.",
     linkedin: "https://linkedin.com/in/musa-ahmed",
