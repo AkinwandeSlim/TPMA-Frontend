@@ -6,29 +6,26 @@ type ISectionProps = {
   description?: string;
   yPadding?: string;
   children: ReactNode;
+  className?: string; // Add className prop
 };
 
-const Section = (props: ISectionProps) => (
+const Section = ({ title, description, yPadding, children, className = '' }: ISectionProps) => (
   <div
     className={`max-w-screen-lg mx-auto px-4 sm:px-6 ${
-      props.yPadding ? props.yPadding : 'py-16'
-    }`}
+      yPadding ? yPadding : 'py-16'
+    } ${className}`} // Merge className with existing classes
   >
-    {(props.title || props.description) && (
+    {(title || description) && (
       <div className="mb-12 text-center">
-        {props.title && (
-          <h2 className="text-4xl text-gray-900 font-extrabold">
-            {props.title}
-          </h2>
+        {title && (
+          <h2 className="text-4xl text-gray-900 font-extrabold">{title}</h2>
         )}
-        {props.description && (
-          <div className="mt-4 text-xl text-gray-600">
-            {props.description}
-          </div>
+        {description && (
+          <div className="mt-4 text-xl text-gray-600">{description}</div>
         )}
       </div>
     )}
-    {props.children}
+    {children}
   </div>
 );
 

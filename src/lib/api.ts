@@ -570,6 +570,9 @@ export const apiRequest = async (method: string, endpoint: string, data?: any, p
   }
 };
 
+
+
+
 // Authentication
 export const verifyToken = async () => {
   return apiRequest("GET", "/api/verify");
@@ -1169,10 +1172,36 @@ export const deleteSupervisorEvaluation = async (id: string) => {
 
 
 
+// // TP Assignment Operations
+// export const getTPAssignments = async (page: number, search: string) => {
+//   return apiRequest("GET", "/api/admin/tp_assignments", undefined, { page, search });
+// };
+
+
+
+
 // TP Assignment Operations
-export const getTPAssignments = async (page: number, search: string) => {
-  return apiRequest("GET", "/api/admin/tp_assignments", undefined, { page, search });
+export const getTPAssignments = async (page: number, search: string, forceRefresh: boolean = false) => {
+  const params = {
+    page,
+    search,
+    ...(forceRefresh ? { t: Date.now().toString() } : {}),
+  };
+  return apiRequest("GET", "/api/admin/tp_assignments", undefined, params);
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export const assignTP = async (
   data: { id?: string; traineeId: string; schoolId: string; supervisorId: string; startDate?: string; endDate?: string },

@@ -1,4 +1,5 @@
 "use client";
+import { motion } from 'framer-motion';
 import { VerticalFeatureRow } from '../feature/VerticalFeatureRow';
 import { Section } from '../layout/Section';
 
@@ -7,31 +8,37 @@ const VerticalFeatures = () => (
     title="Key Features of SLUK-TPMA"
     description="Empowering teaching practice management for Sule Lamido University."
   >
-    <VerticalFeatureRow
-      title="Admin Oversight"
-      description="Manage users, assign supervisors, and generate system-wide analytics with ease."
-      image="/assets/images/admin-oversight.svg"
-      imageAlt="Admin Oversight"
-    />
-    <VerticalFeatureRow
-      title="Supervisor Tools"
-      description="Access trainee lesson plans, provide digital evaluations, and track progress."
-      image="/assets/images/supervisor-tools.svg"
-      imageAlt="Supervisor Tools"
-      reverse
-    />
-    <VerticalFeatureRow
-      title="Teacher-Trainee Support"
-      description="Create AI-assisted lesson plans, view feedback, and track your progress."
-      image="/assets/images/trainee-support.svg"
-      imageAlt="Teacher-Trainee Support"
-    />
+    <motion.div initial="hidden" animate="visible" className="space-y-12">
+      <motion.div variants={{ hidden: { opacity: 0, y: 50 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, delay: 0 } } }}>
+        <VerticalFeatureRow
+          title="Admin Oversight"
+          description="Manage users, assign supervisors, and generate system-wide analytics with ease."
+          image="/assets/images/admin-oversight.svg"
+          imageAlt="Admin Oversight"
+        />
+      </motion.div>
+      <motion.div variants={{ hidden: { opacity: 0, y: 50 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, delay: 0.2 } } }}>
+        <VerticalFeatureRow
+          title="Supervisor Tools"
+          description="Access trainee lesson plans, provide digital evaluations, and track progress."
+          image="/assets/images/supervisor-tools.svg"
+          imageAlt="Supervisor Tools"
+          reverse
+        />
+      </motion.div>
+      <motion.div variants={{ hidden: { opacity: 0, y: 50 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, delay: 0.4 } } }}>
+        <VerticalFeatureRow
+          title="Teacher-Trainee Support"
+          description="Create AI-assisted lesson plans, view feedback, and track your progress."
+          image="/assets/images/trainee-support.svg"
+          imageAlt="Teacher-Trainee Support"
+        />
+      </motion.div>
+    </motion.div>
   </Section>
 );
 
 export { VerticalFeatures };
-
-
 
 
 
